@@ -1,0 +1,50 @@
+[project]
+name = "captioner"
+version = "0.1.0"
+description = "Short, grounded titles for photobook pages from photo metadata and scene labels."
+readme = "README.md"
+authors = [
+    { name = "Felix Peretz", email = "peretz.fe@gmail.com" },
+]
+requires-python = ">=3.12"
+keywords = ["image captioning", "photobooks", "exif", "geocoding"]
+dependencies = [
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
+    "pandas>=3.1.0",
+    "pillow>=13.0.0",
+    "pycountry>=26.2.16",
+    "reverse-geocoder>=1.5.1",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+    "jupyter>=1.1.1",
+    "nbstripout>=0.9.1",
+    "pre-commit>=4.7.0",
+    "pytest>=9.1.1",
+    "ruff>=0.17.2",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.9,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = ["E402", "E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["captioner"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
