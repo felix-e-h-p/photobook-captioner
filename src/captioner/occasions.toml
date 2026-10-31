@@ -1,0 +1,114 @@
+[settings]
+# Every label in this dataset is >= 0.55.
+min_label_confidence = 0.5
+# Roughly one strong, specific label on the page.
+page_threshold = 1.0
+# Session scores are means over many photos, so diluted.
+context_threshold = 0.4
+# Best session occasion must beat the runner-up by this much.
+context_margin = 0.2
+# What counts as the same session when borrowing an occasion.
+context_window_hours = 6
+# Page evidence this strong wins even if the session disagrees.
+page_override_threshold = 3.0
+
+[[occasion]]
+name = "Beach day"
+setting = "outdoor"
+date_style = "month"
+use_place = true
+seasons = ["spring", "summer", "autumn"]
+core = ["Beach", "Shoreline", "Coast", "Sand", "Sandcastle", "Surfing"]
+blocked_by = ["Snow", "Winter", "Piste", "Skiing", "Snowboarding"]
+evidence = { Beach = 3, Shoreline = 2, Coast = 2, Sand = 2, Sea = 1.5, Ocean = 1.5, Swimwear = 1.5, Bikini = 1.5, Surfing = 3, Sandcastle = 3 }
+
+[[occasion]]
+name = "Birthday party"
+setting = "any"
+date_style = "day"
+use_place = false
+seasons = []
+core = ["Birthday Party", "Birthday Cake", "Party Hat", "Party"]
+blocked_by = []
+evidence = { "Birthday Party" = 4, "Birthday Cake" = 4, "Party Hat" = 3, Party = 2, Balloon = 1.5, Candle = 1, Cake = 0.7 }
+
+[[occasion]]
+name = "Skiing"
+setting = "outdoor"
+date_style = "month"
+use_place = true
+seasons = ["winter", "spring"]
+core = ["Skiing", "Piste", "Snowboarding", "Ski Lift", "Slope", "Snow"]
+blocked_by = ["Beach", "Swimwear", "Bikini"]
+evidence = { Skiing = 4, Piste = 3, Snowboarding = 3, "Ski Lift" = 3, Slope = 1.5, Snow = 1.5, Mountain = 0.5, Helmet = 0.5, Goggles = 0.5 }
+
+[[occasion]]
+name = "Baking"
+setting = "indoor"
+date_style = "day"
+use_place = false
+seasons = []
+core = ["Baking", "Dough", "Cookie", "Biscuit", "Muffin", "Cupcake", "Oven"]
+blocked_by = []
+evidence = { Baking = 4, Dough = 3, Cookie = 1.5, Biscuit = 1.5, Muffin = 1.5, Cupcake = 1.5, Oven = 2, Cooktop = 1, Bread = 0.7, Bun = 0.7 }
+
+[[occasion]]
+name = "BBQ"
+setting = "outdoor"
+date_style = "day"
+use_place = false
+seasons = ["spring", "summer", "autumn"]
+core = ["Bbq", "Grilling", "Grill", "Barbecue"]
+blocked_by = []
+evidence = { Bbq = 4, Grilling = 4, Barbecue = 4, Grill = 3 }
+
+[[occasion]]
+name = "Picnic"
+setting = "outdoor"
+date_style = "day"
+use_place = true
+seasons = ["spring", "summer", "autumn"]
+core = ["Picnic Basket", "Picnic Blanket"]
+blocked_by = ["Snow"]
+# "Picnic" on its own fires on any outdoor meal, so it only adds weight.
+evidence = { "Picnic Basket" = 3, "Picnic Blanket" = 3, Picnic = 1 }
+
+[[occasion]]
+name = "Wedding"
+setting = "any"
+date_style = "day"
+use_place = true
+seasons = []
+core = ["Wedding", "Bride", "Wedding Gown", "Groom"]
+blocked_by = []
+evidence = { Wedding = 4, Bride = 4, "Wedding Gown" = 4, Groom = 3, Bridegroom = 3 }
+
+[[occasion]]
+name = "Christmas"
+setting = "any"
+date_style = "day"
+use_place = false
+seasons = ["winter"]
+core = ["Christmas Tree", "Santa Claus", "Christmas"]
+blocked_by = []
+evidence = { "Christmas Tree" = 4, "Santa Claus" = 4, Christmas = 4 }
+
+[[occasion]]
+name = "Snow day"
+setting = "outdoor"
+date_style = "day"
+use_place = true
+seasons = ["winter"]
+core = ["Snowman", "Sled"]
+blocked_by = ["Piste", "Skiing"]
+evidence = { Snowman = 4, Sled = 2, Snow = 1, Winter = 1 }
+
+[[occasion]]
+name = "Hiking"
+setting = "outdoor"
+date_style = "month"
+use_place = true
+seasons = []
+core = ["Hiking", "Trail"]
+blocked_by = ["Snow"]
+evidence = { Hiking = 4, Trail = 2, Path = 1, Backpack = 1, Mountain = 0.7, Wilderness = 1 }
