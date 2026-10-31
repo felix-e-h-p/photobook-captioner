@@ -33,12 +33,15 @@ def test_read_exif_without_metadata(make_photo: MakePhoto) -> None:
 
 def test_zero_gps_is_treated_as_missing(make_photo: MakePhoto) -> None:
     _, lat, lon = read_exif(make_photo(lat=0.0, lon=0.0))
-    assert lat is None and lon is None
+    assert lat is None
+    assert lon is None
 
 
 def test_load_photo_missing_file_gives_empty_photo() -> None:
     p = load_photo("does/not/exist.jpg")
-    assert p.taken_at is None and not p.has_gps and p.labels == ()
+    assert p.taken_at is None
+    assert not p.has_gps
+    assert p.labels == ()
 
 
 def test_load_photo_without_label_file(make_photo: MakePhoto) -> None:

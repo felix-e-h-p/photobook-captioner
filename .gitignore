@@ -12,3 +12,7 @@ wheels/
 data/
 .ipynb_checkpoints/
 .DS_Store
+
+mlflow.db
+mlruns/
+outputs/hydra/

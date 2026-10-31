@@ -1,0 +1,39 @@
+data_dir: data
+
+# template or llm
+writer: template
+
+# Let pages borrow the occasion from other photos in the same session.
+use_context: true
+
+# random or consecutive pages
+mode: random
+
+page_sizes: [1, 2, 3]
+pages_per_size: 30
+
+# Drop near-duplicate photos before sampling, so same evidence isn't counted twice.
+remove_duplicates: true
+
+seed: 0
+home_country: GB
+
+# Folder name infers occasion it should get. null means no single occasion (scored separately).
+expected:
+  day-at-beach: Beach day
+  garden-birthday-party: Birthday party
+  skiing-holiday: Skiing
+  summer-with-grandkids: null
+
+mlflow:
+  tracking_uri: sqlite:///mlflow.db
+  experiment: caption-evaluation
+
+hydra:
+  run:
+    dir: outputs/hydra/${now:%Y-%m-%d_%H-%M-%S}
+  sweep:
+    dir: outputs/hydra/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${hydra.job.num}
+  job:
+    chdir: false

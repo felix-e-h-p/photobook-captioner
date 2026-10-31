@@ -24,9 +24,7 @@ def test_caption_json(make_photo: MakePhoto, capsys: pytest.CaptureFixture[str])
     assert result["facts"]["occasion"] == "Baking"
 
 
-def test_folder_writes_jsonl(
-    make_photo: MakePhoto, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_folder_writes_jsonl(make_photo: MakePhoto, tmp_path: Path) -> None:
     for hour in range(5):
         make_photo(taken_at=datetime(2018, 9, 14, 10 + hour), labels=BAKING, **KNUTSFORD)
     out = tmp_path / "out" / "captions.jsonl"

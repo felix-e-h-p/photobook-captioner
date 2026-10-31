@@ -113,7 +113,7 @@ def test_writer_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CAPTION_WRITER", "llm")
     assert isinstance(writer_from_env(), LLMWriter)
     monkeypatch.setenv("CAPTION_WRITER", "gpt")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="CAPTION_WRITER"):
         writer_from_env()
 
 
