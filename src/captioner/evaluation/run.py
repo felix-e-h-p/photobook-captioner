@@ -1,5 +1,6 @@
 """Run an evaluation - sample pages from each folder, caption them, score them."""
 
+import logging
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
@@ -12,6 +13,8 @@ from .metrics import PageRecord, page_record
 from .sampling import Mode, dedupe, sample_pages
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
+
+log = logging.getLogger(__name__)
 
 
 def evaluate(
@@ -67,4 +70,5 @@ def evaluate(
                     clip_template=scores[1],
                 )
             )
+        log.info("%s - %d pages captioned", folder, len(pages))
     return records
