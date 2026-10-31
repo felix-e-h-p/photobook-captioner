@@ -38,7 +38,7 @@ setting = "outdoor"
 date_style = "month"
 use_place = true
 seasons = ["winter", "spring"]
-core = ["Skiing", "Piste", "Snowboarding", "Ski Lift", "Slope", "Snow"]
+core = ["Skiing", "Piste", "Snowboarding", "Ski Lift", "Slope"]
 blocked_by = ["Beach", "Swimwear", "Bikini"]
 evidence = { Skiing = 4, Piste = 3, Snowboarding = 3, "Ski Lift" = 3, Slope = 1.5, Snow = 1.5, Mountain = 0.5, Helmet = 0.5, Goggles = 0.5 }
 
