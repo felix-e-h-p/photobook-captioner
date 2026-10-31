@@ -2,6 +2,7 @@
 
 import json
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
@@ -9,6 +10,8 @@ from pathlib import Path
 from typing import Any, Final
 
 from PIL import Image, UnidentifiedImageError
+
+IMAGE_SUFFIXES: Final = frozenset({".jpg", ".jpeg", ".png", ".heic"})
 
 # EXIF tag ids
 _EXIF_IFD: Final = 0x8769
@@ -104,3 +107,13 @@ def load_photo(path: str) -> Photo:
     label_path = Path(f"{path}.json")
     labels = parse_label_file(label_path) if label_path.exists() else ()
     return Photo(path=str(path), taken_at=taken_at, lat=lat, lon=lon, labels=labels)
+
+
+def by_time(paths: Iterable[str]) -> list[str]:
+    """Photos in the order they were taken, name order if no date."""
+    return sorted(paths, key=lambda p: (load_photo(p).taken_at or datetime.max, Path(p).name))
+
+
+def photos_in(folder: str | Path) -> list[str]:
+    """Photos in a folder, in the order they were taken."""
+    return by_time(str(p) for p in Path(folder).iterdir() if p.suffix.lower() in IMAGE_SUFFIXES)

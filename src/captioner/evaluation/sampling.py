@@ -1,14 +1,13 @@
-"""Pages to evaluate on where near-duplicates removed first, then random or consecutive."""
+"""Pages to evaluate on - near-duplicates removed first, then random or consecutive."""
 
 import random
 from collections.abc import Sequence
-from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
 from PIL import Image, ImageOps
 
-from ..photo import load_photo
+from ..photo import by_time
 
 type Mode = Literal["random", "consecutive"]
 
@@ -24,11 +23,6 @@ def dhash(path: str | Path) -> int:
             left, right = pixels[row * 9 + col], pixels[row * 9 + col + 1]
             bits = (bits << 1) | (right > left)
     return bits
-
-
-def by_time(paths: Sequence[str]) -> list[str]:
-    """Photos in the order they were taken, name order if no date."""
-    return sorted(paths, key=lambda p: (load_photo(p).taken_at or datetime.max, Path(p).name))
 
 
 def dedupe(paths: Sequence[str], max_bits: int = 6) -> list[str]:

@@ -3,18 +3,31 @@
 import logging
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import Any
 
-from ..photo import load_photo
-from ..pipeline import caption_page
+from ..photo import load_photo, photos_in
+from ..pipeline import PageResult, caption_page
 from ..writers import Writer
 from .clip import ImageTextScorer
 from .judge import Judge, known_facts
 from .metrics import PageRecord, page_record
 from .sampling import Mode, dedupe, sample_pages
 
-IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
-
 log = logging.getLogger(__name__)
+
+
+def _judge(judge: Judge, result: PageResult) -> dict[str, Any] | None:
+    facts = known_facts(result, [load_photo(p) for p in result.images])
+    verdict = judge.judge(result.caption, facts)
+    return verdict.to_dict() if verdict else None
+
+
+def _clip(clip: ImageTextScorer, result: PageResult) -> tuple[float, float]:
+    """Similarity of the caption, and of the template caption as a baseline."""
+    return (
+        clip.similarity(result.images, result.caption),
+        clip.similarity(result.images, result.template_caption),
+    )
 
 
 def evaluate(
@@ -39,35 +52,20 @@ def evaluate(
     """
     records: list[PageRecord] = []
     for i, (folder, occasion) in enumerate(sorted(expected.items())):
-        album = sorted(
-            str(p)
-            for p in (Path(data_dir) / folder).iterdir()
-            if p.suffix.lower() in IMAGE_SUFFIXES
-        )
+        album = photos_in(Path(data_dir) / folder)
         pool = dedupe(album) if remove_duplicates else album
         pages = sample_pages(pool, sizes, pages_per_size, mode, seed + i)
         for page in pages:
             result = caption_page(page, album if use_context else None, writer, home_country)
-            verdict = None
-            if judge:
-                facts = known_facts(result, [load_photo(p) for p in page])
-                verdict = judge.judge(result.caption, facts)
-            scores = (
-                (
-                    clip.similarity(page, result.caption),
-                    clip.similarity(page, result.template_caption),
-                )
-                if clip
-                else (None, None)
-            )
+            clip_scores = _clip(clip, result) if clip else (None, None)
             records.append(
                 page_record(
                     result,
                     folder,
                     occasion,
-                    judge=verdict.to_dict() if verdict else None,
-                    clip=scores[0],
-                    clip_template=scores[1],
+                    judge=_judge(judge, result) if judge else None,
+                    clip=clip_scores[0],
+                    clip_template=clip_scores[1],
                 )
             )
         log.info("%s - %d pages captioned", folder, len(pages))

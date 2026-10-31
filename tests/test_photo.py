@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from captioner.photo import load_photo, parse_label_file, read_exif
+from captioner.photo import load_photo, parse_label_file, photos_in, read_exif
 
 from .conftest import MakePhoto
 
@@ -53,3 +53,11 @@ def test_load_photo_without_label_file(make_photo: MakePhoto) -> None:
 def test_confidences_filters_by_threshold(make_photo: MakePhoto) -> None:
     p = load_photo(str(make_photo(labels={"Beach": 0.9, "Sea": 0.4})))
     assert p.confidences(0.5) == {"Beach": pytest.approx(0.9)}
+
+
+def test_photos_in_skips_other_files_and_sorts_by_time(make_photo: MakePhoto) -> None:
+    late = make_photo(taken_at=datetime(2020, 2, 7, 12), name="a.jpg")
+    early = make_photo(taken_at=datetime(2020, 2, 7, 9), name="b.jpg")
+    undated = make_photo(name="c.jpg")
+    (late.parent / "notes.txt").write_text("not a photo")
+    assert photos_in(late.parent) == [str(early), str(late), str(undated)]
