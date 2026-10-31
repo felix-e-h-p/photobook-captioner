@@ -6,58 +6,15 @@ Caption writers only see this record and not the photos.
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
 from typing import Any, Final
 
 from .config import Config, DateStyle, load_config
+from .dates import format_dates, season
 from .geo import Place, place_name
 from .photo import Photo
 from .scene import PageSetting, SceneResult, Source, understand_scene
 
-_NORTH_SEASON: Final = {
-    12: "winter",
-    1: "winter",
-    2: "winter",
-    3: "spring",
-    4: "spring",
-    5: "spring",
-    6: "summer",
-    7: "summer",
-    8: "summer",
-    9: "autumn",
-    10: "autumn",
-    11: "autumn",
-}
-_FLIP: Final = {"winter": "summer", "summer": "winter", "spring": "autumn", "autumn": "spring"}
 MIXED_DATES_DAYS: Final = 31
-
-
-def season(when: datetime, lat: float | None) -> str:
-    """Meteorological season, flipped south of the equator."""
-    s = _NORTH_SEASON[when.month]
-    return _FLIP[s] if lat is not None and lat < 0 else s
-
-
-def ordinal(n: int) -> str:
-    suffix = "th" if 11 <= n % 100 <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-    return f"{n}{suffix}"
-
-
-def format_dates(dates: Sequence[datetime], style: DateStyle) -> str | None:
-    """'day' - 7th February 2019, 13th–14th September 2018.
-    'month' - February 2019. Longer spans - Jan–Feb 2019, 2019–2020."""
-    if not dates:
-        return None
-    lo, hi = min(dates), max(dates)
-    if lo.year != hi.year:
-        return f"{lo.year}–{hi.year}"
-    if lo.month != hi.month:
-        return f"{lo:%b}–{hi:%b %Y}"
-    if style == "day":
-        if lo.day == hi.day:
-            return f"{ordinal(lo.day)} {lo:%B %Y}"
-        return f"{ordinal(lo.day)}–{ordinal(hi.day)} {lo:%B %Y}"
-    return f"{lo:%B %Y}"
 
 
 @dataclass(slots=True, kw_only=True)

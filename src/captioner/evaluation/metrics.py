@@ -18,13 +18,12 @@ from dataclasses import asdict, dataclass, field
 from statistics import mean
 from typing import Any, Literal
 
+from ..dates import YEAR
 from ..geo import place_name
 from ..photo import load_photo
 from ..pipeline import PageResult
 
 type Outcome = Literal["right", "wrong", "none", "unlabelled"]
-
-_YEAR = re.compile(r"\b(?:19|20)\d{2}\b")
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,7 +70,7 @@ def page_record(
 ) -> PageRecord:
     photos = [load_photo(p) for p in result.images]
     exif_years = {str(p.taken_at.year) for p in photos if p.taken_at}
-    caption_years = set(_YEAR.findall(result.caption))
+    caption_years = set(YEAR.findall(result.caption))
     towns = {pl.town for p in photos if (pl := place_name(p.lat, p.lon))}
     return PageRecord(
         folder=folder,

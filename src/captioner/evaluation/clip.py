@@ -1,25 +1,16 @@
 """CLIP image-text similarity - does the caption describe what's actually in the photos?"""
 
-import re
 from collections.abc import Sequence
 from typing import Any, Final, Protocol
+
+from ..dates import strip_date
 
 DEFAULT_MODEL: Final = "ViT-B-32"
 DEFAULT_PRETRAINED: Final = "laion2b_s34b_b79k"
 
-_DATE_BITS: Final = re.compile(
-    r"\b\d{1,2}(?:st|nd|rd|th)?\b|\b(?:19|20)\d{2}\b|"
-    r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\b|[–,]"
-)
-
 
 class ImageTextScorer(Protocol):
     def similarity(self, images: Sequence[str], text: str) -> float: ...
-
-
-def strip_date(caption: str) -> str:
-    """'14th September 2018 – Baking treats' -> 'Baking treats'."""
-    return " ".join(_DATE_BITS.sub(" ", caption).split())
 
 
 class ClipScorer:

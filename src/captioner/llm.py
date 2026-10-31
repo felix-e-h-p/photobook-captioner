@@ -6,12 +6,12 @@ Free, no API key is needed and nothing leaves the machine.
 
 import json
 import os
-import re
 from typing import Any, Final
 
+from .dates import YEAR, shorten_months
 from .facts import PageFacts
 from .ollama import OllamaError, chat
-from .writers import TemplateWriter, Writer, WriterError
+from .writers import MAX_LENGTH, TemplateWriter, Writer, WriterError
 
 DEFAULT_MODEL: Final = "llama3.2:3b"
 
@@ -47,9 +47,6 @@ EXAMPLES: Final[list[tuple[dict[str, Any], str]]] = [
         "Summer days in Whitby",
     ),
 ]
-_YEAR: Final = re.compile(r"\b(?:19|20)\d{2}\b")
-_SHORT_MONTH: Final = re.compile(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]+\b")
-MAX_LENGTH: Final = 60
 
 
 def facts_for_prompt(f: PageFacts) -> dict[str, Any]:
@@ -73,9 +70,9 @@ def _clean(text: str) -> str:
 
 def add_date(title: str, f: PageFacts) -> str:
     """Date added by code, same shape as the template. Month shortened if too long."""
-    if not f.date_text or _YEAR.search(title):
+    if not f.date_text or YEAR.search(title):
         return title
-    for date in (f.date_text, _SHORT_MONTH.sub(r"\1", f.date_text)):
+    for date in (f.date_text, shorten_months(f.date_text)):
         caption = f"{date} – {title}" if f.date_style == "day" else f"{title}, {date}"
         if len(caption) <= MAX_LENGTH:
             return caption

@@ -3,26 +3,11 @@
 import re
 from typing import Final, Protocol
 
+from .dates import MONTH_ABBREVIATIONS, MONTH_WORDS, MONTHS, YEAR
 from .facts import PageFacts
 
 MAX_LENGTH: Final = 60
 
-_MONTHS: Final = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-]
-_MONTH_ABBREVIATIONS: Final = [m[:3] for m in _MONTHS] + ["Sept"]
-_MONTH_WORDS: Final = {m.lower() for m in _MONTHS + _MONTH_ABBREVIATIONS}
 _WORD: Final = re.compile(r"[A-Za-zÀ-ÿ']+")
 _ALWAYS_ALLOWED: Final = {"I", "BBQ", "Day", "Family", "The"}
 _PEOPLE_WORDS: Final = {
@@ -119,14 +104,14 @@ def validate(caption: str, facts: PageFacts) -> list[str]:
 
     date_text = (facts.date_text or "").lower()
     date_numbers = set(re.findall(r"\d+", date_text))
-    for year in re.findall(r"\b(?:19|20)\d{2}\b", c):
+    for year in YEAR.findall(c):
         if year not in date_numbers:
             problems.append(f"year {year} not in metadata")
-    known_years = re.findall(r"\b(?:19|20)\d{2}\b", date_text)
+    known_years = YEAR.findall(date_text)
     if known_years and not any(y in c for y in known_years):
         problems.append("year missing")
-    for month in _MONTHS + _MONTH_ABBREVIATIONS:
-        full = next(m for m in _MONTHS if m.startswith(month)).lower()
+    for month in MONTHS + MONTH_ABBREVIATIONS:
+        full = next(m for m in MONTHS if m.startswith(month)).lower()
         if (
             re.search(rf"\b{month}\b", c)
             and full not in date_text
@@ -145,7 +130,7 @@ def validate(caption: str, facts: PageFacts) -> list[str]:
     if "family" in words and not facts.family:
         problems.append("mentions family, but the labels don't show it")
 
-    allowed = _allowed_words(facts) | _MONTH_WORDS
+    allowed = _allowed_words(facts) | MONTH_WORDS
     for i, word in enumerate(_WORD.findall(c)):
         if i == 0 or not word[0].isupper() or word in _ALWAYS_ALLOWED:
             continue
