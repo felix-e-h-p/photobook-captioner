@@ -9,9 +9,12 @@ authors = [
 requires-python = ">=3.12"
 keywords = ["image captioning", "photobooks", "exif", "geocoding"]
 dependencies = [
+    "fastapi>=0.162.0",
     "pillow>=13.0.0",
     "pycountry>=26.2.16",
+    "python-multipart>=0.0.33",
     "reverse-geocoder>=1.5.1",
+    "uvicorn[standard]>=0.54.0",
 ]
 
 [project.scripts]
@@ -22,6 +25,7 @@ clip = [
     "open-clip-torch>=3.3.0",
 ]
 dev = [
+    "httpx>=0.28.1",
     "hydra-core>=1.3.8",
     "ipykernel>=7.4.0",
     "jupyter>=1.1.1",
