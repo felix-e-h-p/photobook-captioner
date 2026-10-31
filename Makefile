@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install test lint format check evaluate evaluate-llm review score model mlflow serve docker docker-run
+.PHONY: help install test lint format check evaluate evaluate-llm sweep review score model mlflow serve docker docker-run clean
 
 RUN ?=
 IMAGE := photobook-captioner
@@ -52,8 +52,9 @@ docker:
 docker-run:
 	docker run --rm -p 8001:8000 -v "$(CURDIR)/data:/photos:ro" $(IMAGE)
 
-clean:
-  	rm -rf .pytest_cache .mypy_cache .ruff_cache **/__pycache__
-
 sweep:
-  	uv run python scripts/evaluate.py -m writer=template,llm use_context=true,false
+	uv run python scripts/evaluate.py -m writer=template,llm use_context=true,false
+
+clean:
+	rm -rf .pytest_cache .mypy_cache .ruff_cache
+	find . -name __pycache__ -type d -prune -exec rm -rf {} +
