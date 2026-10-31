@@ -1,7 +1,7 @@
 """Human review - rate a sample of captions by hand, then log the scores to MLflow.
 
     uv run python scripts/review.py make <run_id>
-    (open outputs/review/<run_id>/review.html to see the photos, fill in review.csv)
+    (rate each page in the review page that opens, then click "Download ratings")
     uv run python scripts/review.py score <run_id>
 
 Ratings are 1-5. faithful - is everything in the caption true of the photos?
@@ -10,14 +10,16 @@ natural - would you be happy to see it printed in your own book?
 
 import argparse
 import csv
-import html
 import json
 import os
 import random
+import shutil
+import webbrowser
 from collections import defaultdict
 from pathlib import Path
 from statistics import mean
-from typing import Any
+from string import Template
+from typing import Any, Final
 
 import mlflow
 from mlflow.tracking import MlflowClient
@@ -25,6 +27,7 @@ from mlflow.tracking import MlflowClient
 TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
 OUT_DIR = Path("outputs/review")
 FIELDS = ["id", "folder", "images", "caption", "template_caption", "faithful", "natural", "notes"]
+PAGE: Final = Template(Path(__file__).with_name("review_page.html").read_text())
 
 
 def _pages(run_id: str) -> list[dict[str, Any]]:
@@ -47,18 +50,14 @@ def _sample(pages: list[dict[str, Any]], n: int, seed: int) -> list[dict[str, An
     return picked
 
 
-def _html(rows: list[dict[str, str]], out: Path) -> str:
-    cards = []
-    for row in rows:
-        images = "".join(
-            f'<img src="{html.escape(os.path.relpath(p, out))}">' for p in row["images"].split(";")
-        )
-        cards.append(
-            f"<section><h3>{row['id']}. {html.escape(row['caption'])}</h3>"
-            f"<p>template: {html.escape(row['template_caption'])}</p>{images}</section>"
-        )
-    style = "img{height:180px;margin:4px}section{margin-bottom:24px}body{font-family:sans-serif}"
-    return f"<html><head><style>{style}</style></head><body>{''.join(cards)}</body></html>"
+def _html(rows: list[dict[str, str]], out: Path, run_id: str) -> str:
+    """Review page - photos, both captions, and 1-5 buttons. Ratings are kept in the
+    browser between visits and downloaded as a CSV at the end."""
+    pages = [
+        row | {"src": {p: os.path.relpath(p, out) for p in row["images"].split(";")}}
+        for row in rows
+    ]
+    return PAGE.substitute(rows=json.dumps(pages), run_id=run_id, fields=json.dumps(FIELDS))
 
 
 def make(run_id: str, n: int, seed: int) -> None:
@@ -81,12 +80,20 @@ def make(run_id: str, n: int, seed: int) -> None:
         writer = csv.DictWriter(f, fieldnames=FIELDS)
         writer.writeheader()
         writer.writerows(rows)
-    (out / "review.html").write_text(_html(rows, out))
-    print(f"{len(rows)} pages to review - fill in {out / 'review.csv'}, photos in review.html")
+    page = out / "review.html"
+    page.write_text(_html(rows, out, run_id))
+    webbrowser.open(page.resolve().as_uri())
+    print(f"{len(rows)} pages to review in {page} - click Download ratings when done")
 
 
-def score(run_id: str) -> None:
+def score(run_id: str, ratings: Path | None) -> None:
+    """Ratings from the review page download, kept next to the page and logged to the run."""
+    ratings = ratings or Path.home() / "Downloads" / f"review-{run_id}.csv"
+    if not ratings.exists():
+        raise SystemExit(f"{ratings} not found - click Download ratings on the review page first")
     sheet = OUT_DIR / run_id / "review.csv"
+    if ratings.resolve() != sheet.resolve():
+        shutil.copy(ratings, sheet)
     with sheet.open() as f:
         rows = [r for r in csv.DictReader(f) if r["faithful"] and r["natural"]]
     if not rows:
@@ -116,13 +123,16 @@ def main() -> None:
     make_cmd.add_argument("--seed", type=int, default=0)
     score_cmd = sub.add_parser("score", help="log the filled-in ratings to the run")
     score_cmd.add_argument("run_id")
+    score_cmd.add_argument(
+        "--file", type=Path, help="ratings CSV (default ~/Downloads/review-<run_id>.csv)"
+    )
     args = parser.parse_args()
 
     mlflow.set_tracking_uri(TRACKING_URI)
     if args.command == "make":
         make(args.run_id, args.n, args.seed)
     else:
-        score(args.run_id)
+        score(args.run_id, args.file)
 
 
 if __name__ == "__main__":

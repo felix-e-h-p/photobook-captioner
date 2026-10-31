@@ -1,0 +1,74 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Caption review</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:1000px;margin:24px auto;padding:0 16px}
+section{border-bottom:1px solid #ddd;padding:16px 0}
+h3{margin:0 0 4px}p{margin:0 0 8px;color:#666}
+img{height:180px;margin:0 6px 6px 0;border-radius:4px}
+.row{display:flex;gap:6px;align-items:center;margin:4px 0}
+.row b{width:70px}
+button{width:34px;height:30px;border:1px solid #aaa;border-radius:4px;background:#fff;cursor:pointer}
+button.on{background:#222;color:#fff}
+input{flex:1;padding:6px}
+#bar{position:sticky;top:0;background:#fff;padding:8px 0;border-bottom:2px solid #222;z-index:1}
+#save{width:auto;padding:0 16px;background:#222;color:#fff}
+</style>
+<div id="bar"><button id="save">Download ratings</button> <span id="count"></span></div>
+<div id="pages"></div>
+<script>
+const rows = $rows;
+const key = "review-$run_id";
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem(key)) || {}; } catch {}
+for (const r of rows) Object.assign(r, saved[r.id] || {});
+const keep = () => {
+  const done = rows.filter(r => r.faithful && r.natural).length;
+  document.getElementById("count").textContent = `$${done} of $${rows.length} rated`;
+  const state = Object.fromEntries(
+    rows.map(r => [r.id, {faithful: r.faithful, natural: r.natural, notes: r.notes}])
+  );
+  try { localStorage.setItem(key, JSON.stringify(state)); } catch {}
+};
+const scale = (r, field) => {
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = `<b>$${field}</b>`;
+  for (let n = 1; n <= 5; n++) {
+    const b = document.createElement("button");
+    b.textContent = n;
+    b.className = r[field] == n ? "on" : "";
+    b.onclick = () => {
+      r[field] = String(n);
+      row.querySelectorAll("button").forEach(x => x.className = x === b ? "on" : "");
+      keep();
+    };
+    row.append(b);
+  }
+  return row;
+};
+for (const r of rows) {
+  const s = document.createElement("section");
+  s.innerHTML = `<h3></h3><p></p>` + r.images.split(";").map(p => `<img src="$${r.src[p]}">`).join("");
+  s.querySelector("h3").textContent = `$${r.id}. $${r.caption}`;
+  s.querySelector("p").textContent = `template: $${r.template_caption}`;
+  const notes = document.createElement("div");
+  notes.className = "row";
+  notes.innerHTML = "<b>notes</b><input>";
+  const input = notes.querySelector("input");
+  input.value = r.notes || "";
+  input.oninput = () => { r.notes = input.value; keep(); };
+  s.append(scale(r, "faithful"), scale(r, "natural"), notes);
+  document.getElementById("pages").append(s);
+}
+const cell = v => `"$${String(v ?? "").replaceAll('"', '""')}"`;
+document.getElementById("save").onclick = () => {
+  const fields = $fields;
+  const csv = [fields.join(","), ...rows.map(r => fields.map(f => cell(r[f])).join(","))].join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv + "\n"], {type: "text/csv"}));
+  a.download = "review-$run_id.csv";
+  a.click();
+};
+keep();
+</script>
