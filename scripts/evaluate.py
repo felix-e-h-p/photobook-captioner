@@ -23,22 +23,11 @@ import hydra
 import mlflow
 from omegaconf import DictConfig, OmegaConf
 
-from captioner import LLMWriter, TemplateWriter
+from captioner import make_writer
 from captioner.evaluation import PageRecord, evaluate, summarise
 from captioner.evaluation.clip import ClipScorer, ImageTextScorer
 from captioner.evaluation.judge import Judge
 from captioner.evaluation.metrics import rejection_reasons
-from captioner.writers import Writer
-
-
-def _writer(name: str) -> Writer:
-    match name:
-        case "template":
-            return TemplateWriter()
-        case "llm":
-            return LLMWriter()
-        case _:
-            raise ValueError(f"writer must be 'template' or 'llm', got {name!r}")
 
 
 def _git_commit() -> str:
@@ -75,7 +64,7 @@ def _examples(records: list[PageRecord], per_folder: int = 8) -> str:
 @hydra.main(version_base=None, config_path="../configs", config_name="evaluate")
 def main(cfg: DictConfig) -> float:
     expected = cast(dict[str, str | None], OmegaConf.to_container(cfg.expected))
-    writer = _writer(cfg.writer)
+    writer = make_writer(cfg.writer)
     judge = Judge(cfg.judge.model) if cfg.judge.enabled else None
     clip: ImageTextScorer | None = (
         ClipScorer(cfg.clip.model, cfg.clip.pretrained) if cfg.clip.enabled else None

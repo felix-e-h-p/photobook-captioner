@@ -6,7 +6,14 @@ from typing import Any
 
 import pytest
 
-from captioner import LLMWriter, TemplateWriter, WriterError, caption_page, writer_from_env
+from captioner import (
+    LLMWriter,
+    TemplateWriter,
+    WriterError,
+    caption_page,
+    make_writer,
+    writer_from_env,
+)
 from captioner.llm import add_date, facts_for_prompt
 
 from .conftest import YUZAWA, MakePhoto, page_facts
@@ -113,7 +120,7 @@ def test_writer_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CAPTION_WRITER", "llm")
     assert isinstance(writer_from_env(), LLMWriter)
     monkeypatch.setenv("CAPTION_WRITER", "gpt")
-    with pytest.raises(ValueError, match="CAPTION_WRITER"):
+    with pytest.raises(ValueError, match="'gpt'"):
         writer_from_env()
 
 
@@ -122,3 +129,8 @@ def test_no_occasion_skips_the_model() -> None:
     f = page_facts(occasion=None, phrase=None, place="Knutsford", date_text="September 2018")
     assert writer.write(f) == "Knutsford, September 2018"
     assert writer.seen == []
+
+
+def test_make_writer() -> None:
+    assert isinstance(make_writer("template"), TemplateWriter)
+    assert isinstance(make_writer("llm"), LLMWriter)

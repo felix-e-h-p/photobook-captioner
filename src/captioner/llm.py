@@ -124,12 +124,17 @@ class LLMWriter:
         return add_date(title, facts)
 
 
-def writer_from_env() -> Writer:
-    """CAPTION_WRITER=template (default) or llm."""
-    match os.environ.get("CAPTION_WRITER", "template"):
+def make_writer(name: str) -> Writer:
+    """Writer by name - "template" or "llm"."""
+    match name:
         case "template":
             return TemplateWriter()
         case "llm":
             return LLMWriter()
-        case other:
-            raise ValueError(f"CAPTION_WRITER must be 'template' or 'llm', got {other!r}")
+        case _:
+            raise ValueError(f"writer must be 'template' or 'llm', got {name!r}")
+
+
+def writer_from_env() -> Writer:
+    """CAPTION_WRITER=template (default) or llm."""
+    return make_writer(os.environ.get("CAPTION_WRITER", "template"))
