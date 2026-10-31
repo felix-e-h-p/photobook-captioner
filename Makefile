@@ -51,3 +51,9 @@ docker:
 
 docker-run:
 	docker run --rm -p 8001:8000 -v "$(CURDIR)/data:/photos:ro" $(IMAGE)
+
+clean:
+  	rm -rf .pytest_cache .mypy_cache .ruff_cache **/__pycache__
+
+sweep:
+  	uv run python scripts/evaluate.py -m writer=template,llm use_context=true,false
