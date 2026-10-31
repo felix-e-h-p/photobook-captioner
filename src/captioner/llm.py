@@ -7,15 +7,13 @@ Free, no API key is needed and nothing leaves the machine.
 import json
 import os
 import re
-import urllib.error
-import urllib.request
 from typing import Any, Final
 
 from .facts import PageFacts
+from .ollama import OllamaError, chat
 from .writers import TemplateWriter, Writer, WriterError
 
 DEFAULT_MODEL: Final = "llama3.2:3b"
-DEFAULT_HOST: Final = "http://localhost:11434"
 
 SYSTEM_PROMPT: Final = """You write short titles for pages in a printed photo book.
 You are given facts about the photos on one page. Write ONE title.
@@ -99,7 +97,7 @@ class LLMWriter:
         temperature: float = 0.3,
     ) -> None:
         self.model = model or os.environ.get("CAPTION_LLM_MODEL", DEFAULT_MODEL)
-        self.host = host or os.environ.get("OLLAMA_HOST", DEFAULT_HOST)
+        self.host = host
         self.timeout = timeout
         self.temperature = temperature
         self.name = f"llm:{self.model}"
@@ -114,23 +112,10 @@ class LLMWriter:
         return out
 
     def complete(self, messages: list[dict[str, str]]) -> str:
-        body = {
-            "model": self.model,
-            "stream": False,
-            "options": {"temperature": self.temperature},
-            "messages": messages,
-        }
-        request = urllib.request.Request(
-            f"{self.host}/api/chat",
-            data=json.dumps(body).encode(),
-            headers={"content-type": "application/json"},
-            method="POST",
-        )
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                return str(json.loads(response.read())["message"]["content"])
-        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError) as e:
-            raise WriterError(f"{type(e).__name__}: {e}") from e
+            return chat(messages, self.model, self.host, self.timeout, self.temperature)
+        except OllamaError as e:
+            raise WriterError(str(e)) from e
 
     def write(self, facts: PageFacts) -> str:
         """No occasion means nothing to reword, so the template is used as is."""

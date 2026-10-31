@@ -7,6 +7,8 @@ Grounding - years in the caption checked against the photos' own EXIF, independe
 Writer - how often the LLM's caption was rejected, and why.
 Variety - share of distinct captions per folder. A book that repeats one caption on
     every page reads badly even if each caption is right.
+Judge (optional) - a larger local model's 1-5 scores for faithful, specific, natural.
+CLIP (optional) - image-text similarity of the caption, and the gain over the template.
 """
 
 import re
@@ -43,6 +45,9 @@ class PageRecord:
     writer_caption: str | None
     rejected: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    judge: dict[str, Any] | None = None
+    clip: float | None = None
+    clip_template: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -56,7 +61,14 @@ def _outcome(occasion: str | None, expected: str | None) -> Outcome:
     return "right" if occasion == expected else "wrong"
 
 
-def page_record(result: PageResult, folder: str, expected: str | None) -> PageRecord:
+def page_record(
+    result: PageResult,
+    folder: str,
+    expected: str | None,
+    judge: dict[str, Any] | None = None,
+    clip: float | None = None,
+    clip_template: float | None = None,
+) -> PageRecord:
     photos = [load_photo(p) for p in result.images]
     exif_years = {str(p.taken_at.year) for p in photos if p.taken_at}
     caption_years = set(_YEAR.findall(result.caption))
@@ -78,6 +90,9 @@ def page_record(result: PageResult, folder: str, expected: str | None) -> PageRe
         writer_caption=result.writer_caption,
         rejected=result.rejected,
         warnings=result.facts.warnings,
+        judge=judge,
+        clip=clip,
+        clip_template=clip_template,
     )
 
 
@@ -100,6 +115,22 @@ def _group_metrics(records: list[PageRecord]) -> dict[str, float]:
         "mean_length": round(mean(len(r.caption) for r in records), 2),
         "with_warnings": _share(bool(r.warnings) for r in records),
     }
+    judged = [r.judge for r in records if r.judge]
+    if judged:
+        out |= {
+            "judge_faithful": round(mean(j["faithful"] for j in judged), 3),
+            "judge_specific": round(mean(j["specific"] for j in judged), 3),
+            "judge_natural": round(mean(j["natural"] for j in judged), 3),
+            "judge_unsupported": _share(bool(j["unsupported"]) for j in judged),
+            "judge_failed": round(1 - len(judged) / len(records), 4),
+        }
+    clip_pairs = [(r.clip, r.clip_template) for r in records if r.clip is not None]
+    pairs = [(c, t) for c, t in clip_pairs if t is not None]
+    if pairs:
+        out |= {
+            "clip": round(mean(c for c, _ in pairs), 4),
+            "clip_gain": round(mean(c - t for c, t in pairs), 4),
+        }
     if labelled:
         out |= {
             "accuracy": _share(r.outcome == "right" for r in labelled),

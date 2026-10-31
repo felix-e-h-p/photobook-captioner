@@ -3,6 +3,7 @@
     uv run python scripts/evaluate.py
     uv run python scripts/evaluate.py writer=llm mode=consecutive
     uv run python scripts/evaluate.py -m writer=template,llm use_context=true,false
+    uv run python scripts/evaluate.py writer=llm judge.enabled=true clip.enabled=true
 
 Each run logs its settings, every metric from captioner.evaluation.summarise, and the
 captioned pages as artifacts. Compare runs with `uv run mlflow ui
@@ -24,6 +25,8 @@ from omegaconf import DictConfig, OmegaConf
 
 from captioner import LLMWriter, TemplateWriter
 from captioner.evaluation import PageRecord, evaluate, summarise
+from captioner.evaluation.clip import ClipScorer, ImageTextScorer
+from captioner.evaluation.judge import Judge
 from captioner.evaluation.metrics import rejection_reasons
 from captioner.writers import Writer
 
@@ -63,6 +66,8 @@ def _examples(records: list[PageRecord], per_folder: int = 8) -> str:
                 lines.append(
                     f"  - writer said {r.writer_caption!r}, rejected: {'; '.join(r.rejected)}"
                 )
+            if r.judge and r.judge["unsupported"]:
+                lines.append(f"  - judge flagged: {', '.join(r.judge['unsupported'])}")
         lines.append("")
     return "\n".join(lines)
 
@@ -71,6 +76,10 @@ def _examples(records: list[PageRecord], per_folder: int = 8) -> str:
 def main(cfg: DictConfig) -> float:
     expected = cast(dict[str, str | None], OmegaConf.to_container(cfg.expected))
     writer = _writer(cfg.writer)
+    judge = Judge(cfg.judge.model) if cfg.judge.enabled else None
+    clip: ImageTextScorer | None = (
+        ClipScorer(cfg.clip.model, cfg.clip.pretrained) if cfg.clip.enabled else None
+    )
     records = evaluate(
         cfg.data_dir,
         expected,
@@ -82,6 +91,8 @@ def main(cfg: DictConfig) -> float:
         remove_duplicates=cfg.remove_duplicates,
         seed=cfg.seed,
         home_country=cfg.home_country,
+        judge=judge,
+        clip=clip,
     )
     metrics = summarise(records)
     occasions = resources.files("captioner").joinpath("occasions.toml").read_text()
@@ -99,6 +110,8 @@ def main(cfg: DictConfig) -> float:
             "remove_duplicates": cfg.remove_duplicates,
             "seed": cfg.seed,
             "home_country": cfg.home_country,
+            "judge": cfg.judge.model if cfg.judge.enabled else "off",
+            "clip": f"{cfg.clip.model}/{cfg.clip.pretrained}" if cfg.clip.enabled else "off",
             "occasions_sha": hashlib.sha256(occasions.encode()).hexdigest()[:12],
         }
         mlflow.log_params(params)
@@ -124,8 +137,10 @@ def main(cfg: DictConfig) -> float:
         "all/abstained",
         "all/writer_rejected",
         "all/distinct_captions",
+        "all/judge_faithful",
+        "all/clip_gain",
     ]
-    print(run_name, {k: metrics.get(k) for k in headline})
+    print(run_name, {k: metrics[k] for k in headline if k in metrics})
     return metrics.get("all/accuracy", 0.0)
 
 

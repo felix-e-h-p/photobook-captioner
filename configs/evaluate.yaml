@@ -25,6 +25,17 @@ expected:
   skiing-holiday: Skiing
   summer-with-grandkids: null
 
+# Larger local model that scores each caption 1-5. Needs Ollama with the model pulled.
+judge:
+  enabled: false
+  model: llama3.1:8b
+
+# Image-text similarity. Needs the clip dependency group.
+clip:
+  enabled: false
+  model: ViT-B-32
+  pretrained: laion2b_s34b_b79k
+
 mlflow:
   tracking_uri: sqlite:///mlflow.db
   experiment: caption-evaluation
