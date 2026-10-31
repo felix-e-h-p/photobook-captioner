@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from captioner import LLMWriter, TemplateWriter, WriterError, caption_page, writer_from_env
-from captioner.llm import facts_for_prompt
+from captioner.llm import add_date, facts_for_prompt
 
 from .conftest import YUZAWA, MakePhoto, page_facts
 
@@ -38,7 +38,7 @@ def test_prompt_contains_facts_only(make_photo: MakePhoto) -> None:
     sent = json.dumps(writer.seen)
     assert page[0] not in sent
     assert "Yuzawa, Japan" in sent
-    assert "February 2020" in sent
+    assert "2020" not in sent
 
 
 def test_good_caption_is_kept(make_photo: MakePhoto) -> None:
@@ -70,13 +70,31 @@ def test_ollama_not_running_falls_back_to_template(make_photo: MakePhoto) -> Non
 @pytest.mark.parametrize(
     ("reply", "expected"),
     [
-        ('"Ski week in Yuzawa."', "Ski week in Yuzawa"),
-        ("Ski week in Yuzawa\nHere is another option", "Ski week in Yuzawa"),
-        ("  “Ski week”  ", "Ski week"),
+        ('"Ski week in Yuzawa."', "Ski week in Yuzawa, February 2020"),
+        ("Ski week in Yuzawa\nHere is another option", "Ski week in Yuzawa, February 2020"),
+        ("  “Ski week”  ", "Ski week, February 2020"),
     ],
 )
 def test_reply_is_cleaned(reply: str, expected: str) -> None:
     assert StubLLM(reply).write(page_facts()) == expected
+
+
+def test_date_is_added_by_code() -> None:
+    assert StubLLM("Ski week in Yuzawa").write(page_facts()) == "Ski week in Yuzawa, February 2020"
+
+
+def test_one_off_occasion_puts_the_date_first() -> None:
+    f = page_facts(date_text="7th February 2019", date_style="day")
+    assert add_date("Party in the garden", f) == "7th February 2019 – Party in the garden"
+
+
+def test_long_titles_get_a_short_month() -> None:
+    title = "Family beach day at North Bondi in New South Wales"
+    assert add_date(title, page_facts(date_text="March 2018")) == f"{title}, Mar 2018"
+
+
+def test_date_from_the_model_is_left_alone() -> None:
+    assert add_date("Ski week, Feb 2020", page_facts()) == "Ski week, Feb 2020"
 
 
 def test_empty_reply_is_an_error() -> None:
@@ -97,3 +115,10 @@ def test_writer_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CAPTION_WRITER", "gpt")
     with pytest.raises(ValueError):
         writer_from_env()
+
+
+def test_no_occasion_skips_the_model() -> None:
+    writer = StubLLM("Autumn walk in the woods")
+    f = page_facts(occasion=None, phrase=None, place="Knutsford", date_text="September 2018")
+    assert writer.write(f) == "Knutsford, September 2018"
+    assert writer.seen == []

@@ -6,6 +6,7 @@ Free, no API key is needed and nothing leaves the machine.
 
 import json
 import os
+import re
 import urllib.error
 import urllib.request
 from typing import Any, Final
@@ -20,34 +21,37 @@ SYSTEM_PROMPT: Final = """You write short titles for pages in a printed photo bo
 You are given facts about the photos on one page. Write ONE title.
 
 Rules:
-- Short - under 60 characters. Warm and natural, the way a person would title their own photos.
-- Only use the place and date given. Never invent names, places, dates or details.
-- Always keep the year. To make it shorter, drop the country or shorten the month
-  (e.g. "Feb 2019") - never drop the year.
+- Under 45 characters. Warm and natural, the way a person would title their own photos.
+- Don't include a date - it is added for you.
+- Only use the place given. Never invent names, places or details.
 - Don't say who is in the photos (no "solo", "friends", "grandma") - only mention kids or
   family if the facts say so.
+- Don't add anything the facts don't say - no rooms, walks, woods, weather or scenery.
 - If a fact is null, leave it out. You may leave the place out if the title reads better.
 - No emojis, no quotation marks, no full stop at the end.
 Reply with the title only."""
 
 EXAMPLES: Final[list[tuple[dict[str, Any], str]]] = [
     (
-        {"occasion": "Beach day", "place": "Brighton", "date": "July 2023", "family": True},
-        "Family day at the beach in Brighton, July 2023",
+        {"occasion": "Beach day", "place": "Brighton", "season": "summer", "family": True},
+        "Family day at the beach in Brighton",
     ),
     (
-        {"occasion": "BBQ", "place": None, "date": "12th June 2025", "setting": "outdoor"},
-        "12th June 2025 – BBQ in the garden",
+        {"occasion": "BBQ", "place": None, "season": "summer", "setting": "outdoor"},
+        "BBQ in the garden",
     ),
     (
-        {"occasion": "Skiing holiday", "place": "Morzine, France", "date": "February 2024"},
-        "Ski week in Morzine, Feb 2024",
+        {"occasion": "Skiing holiday", "place": "Morzine, France", "season": "winter"},
+        "Ski week in Morzine",
     ),
     (
-        {"occasion": None, "place": "Whitby", "date": "August 2022", "season": "summer"},
-        "Summer days in Whitby, August 2022",
+        {"occasion": None, "place": "Whitby", "season": "summer"},
+        "Summer days in Whitby",
     ),
 ]
+_YEAR: Final = re.compile(r"\b(?:19|20)\d{2}\b")
+_SHORT_MONTH: Final = re.compile(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]+\b")
+MAX_LENGTH: Final = 60
 
 
 def facts_for_prompt(f: PageFacts) -> dict[str, Any]:
@@ -56,7 +60,6 @@ def facts_for_prompt(f: PageFacts) -> dict[str, Any]:
     return {
         "occasion": f.phrase,
         "place": f.place if f.use_place else None,
-        "date": f.date_text,
         "season": f.season,
         "setting": f.setting,
         "kids": f.kids,
@@ -68,6 +71,17 @@ def facts_for_prompt(f: PageFacts) -> dict[str, Any]:
 def _clean(text: str) -> str:
     line = text.strip().splitlines()[0] if text.strip() else ""
     return line.strip().strip("\"'“”").rstrip(".").strip()
+
+
+def add_date(title: str, f: PageFacts) -> str:
+    """Date added by code, same shape as the template. Month shortened if too long."""
+    if not f.date_text or _YEAR.search(title):
+        return title
+    for date in (f.date_text, _SHORT_MONTH.sub(r"\1", f.date_text)):
+        caption = f"{date} – {title}" if f.date_style == "day" else f"{title}, {date}"
+        if len(caption) <= MAX_LENGTH:
+            return caption
+    return caption
 
 
 class LLMWriter:
@@ -119,10 +133,13 @@ class LLMWriter:
             raise WriterError(f"{type(e).__name__}: {e}") from e
 
     def write(self, facts: PageFacts) -> str:
-        caption = _clean(self.complete(self.messages(facts)))
-        if not caption:
+        """No occasion means nothing to reword, so the template is used as is."""
+        if facts.phrase is None:
+            return TemplateWriter().write(facts)
+        title = _clean(self.complete(self.messages(facts)))
+        if not title:
             raise WriterError("model returned an empty caption")
-        return caption
+        return add_date(title, facts)
 
 
 def writer_from_env() -> Writer:
