@@ -22,8 +22,10 @@ You are given facts about the photos on one page. Write ONE title.
 Rules:
 - At most 50 characters. Warm and natural, the way a person would title their own photos.
 - Only use the place and date given. Never invent names, places, dates or details.
-- If a fact is null, leave it out.
-- You may shorten the date (e.g. "Feb 2019") or leave the place out if the title reads better.
+- Always keep the year. You may shorten the month (e.g. "Feb 2019").
+- Don't say who is in the photos (no "solo", "friends", "grandma") - only mention kids or
+  family if the facts say so.
+- If a fact is null, leave it out. You may leave the place out if the title reads better.
 - No emojis, no quotation marks, no full stop at the end.
 Reply with the title only."""
 
