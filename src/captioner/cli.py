@@ -44,8 +44,10 @@ def _print(result: PageResult, as_json: bool) -> None:
     print(f"{result.caption}    [{names}]")
     for warning in result.facts.warnings:
         print(f"    note: {warning}")
-    for reason in result.rejected:
-        print(f"    writer caption rejected: {reason}")
+    if result.rejected:
+        print(
+            f"    writer said: {result.writer_caption!r} - rejected: {'; '.join(result.rejected)}"
+        )
 
 
 def _caption(args: argparse.Namespace) -> int:

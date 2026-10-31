@@ -100,6 +100,7 @@ def _allowed_words(f: PageFacts) -> set[str]:
         f.occasion,
         f.place,
         f.date_text,
+        f.season,
         detail.get("region"),
         detail.get("country"),
     ]

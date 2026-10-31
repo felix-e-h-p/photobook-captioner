@@ -50,6 +50,7 @@ def test_good_caption_is_kept(make_photo: MakePhoto) -> None:
 def test_invented_place_falls_back_to_template(make_photo: MakePhoto) -> None:
     result = caption_page(_page(make_photo), writer=StubLLM("Powder days in Niseko, Feb 2020"))
     assert result.caption == result.template_caption
+    assert result.writer_caption == "Powder days in Niseko, Feb 2020"
     assert any("Niseko" in r for r in result.rejected)
 
 

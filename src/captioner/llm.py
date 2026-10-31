@@ -20,9 +20,10 @@ SYSTEM_PROMPT: Final = """You write short titles for pages in a printed photo bo
 You are given facts about the photos on one page. Write ONE title.
 
 Rules:
-- At most 50 characters. Warm and natural, the way a person would title their own photos.
+- Short - under 60 characters. Warm and natural, the way a person would title their own photos.
 - Only use the place and date given. Never invent names, places, dates or details.
-- Always keep the year. You may shorten the month (e.g. "Feb 2019").
+- Always keep the year. To make it shorter, drop the country or shorten the month
+  (e.g. "Feb 2019") - never drop the year.
 - Don't say who is in the photos (no "solo", "friends", "grandma") - only mention kids or
   family if the facts say so.
 - If a fact is null, leave it out. You may leave the place out if the title reads better.

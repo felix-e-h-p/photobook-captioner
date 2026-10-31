@@ -66,6 +66,11 @@ def test_validate_allows_rewording() -> None:
     assert validate("Ski week in Yuzawa, Feb 2020", page_facts()) == []
 
 
+def test_validate_allows_the_season() -> None:
+    assert validate("Yuzawa in Winter, Feb 2020", page_facts(season="winter")) == []
+    assert validate("Yuzawa in Summer, Feb 2020", page_facts(season="winter"))
+
+
 def test_validate_allows_sept() -> None:
     f = page_facts(date_text="14th September 2018", date_style="day")
     assert validate("Baking, 14th Sept 2018", f) == []

@@ -21,8 +21,9 @@ SESSION_RADIUS_KM: Final = 25
 class PageResult:
     """Caption plus everything that went into it. Used by evaluation and for logging.
 
-    `rejected` lists the validator's problems when a writer's caption was thrown out
-    in favour of the template.
+    `writer_caption` is what the writer produced, kept even when it was thrown out.
+    `rejected` says why it was thrown out in favour of the template - validator
+    problems, or the error if the writer failed outright.
     """
 
     images: list[str]
@@ -31,6 +32,7 @@ class PageResult:
     writer: str
     facts: PageFacts
     n_context: int = 0
+    writer_caption: str | None = None
     rejected: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -91,8 +93,9 @@ def caption_page(
 
     facts = build_facts(photos, context, home_country=home_country, config=config)
     template = TemplateWriter().write(facts)
+    writer_caption: str | None = None
     try:
-        caption = writer.write(facts)
+        caption = writer_caption = writer.write(facts)
         rejected = validate(caption, facts) if writer.name != "template" else []
     except WriterError as e:
         caption, rejected = template, [f"writer failed: {e}"]
@@ -106,6 +109,7 @@ def caption_page(
         writer=writer.name,
         facts=facts,
         n_context=len(context or []),
+        writer_caption=writer_caption,
         rejected=rejected,
     )
 
