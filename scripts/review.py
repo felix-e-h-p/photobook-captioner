@@ -22,7 +22,7 @@ from typing import Any
 import mlflow
 from mlflow.tracking import MlflowClient
 
-TRACKING_URI = "sqlite:///mlflow.db"
+TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
 OUT_DIR = Path("outputs/review")
 FIELDS = ["id", "folder", "images", "caption", "template_caption", "faithful", "natural", "notes"]
 

@@ -9,11 +9,12 @@ Then caption a page over HTTP:
       -d '{"inputs": [{"images": ["data/skiing-holiday/Image_1.jpg"]}]}'
 """
 
+import os
 from pathlib import Path
 
 import mlflow
 
-TRACKING_URI = "sqlite:///mlflow.db"
+TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
 EXPERIMENT = "caption-model"
 MODEL_NAME = "photobook-captioner"
 EXAMPLE = [{"images": ["data/skiing-holiday/Image_1.jpg"]}]
