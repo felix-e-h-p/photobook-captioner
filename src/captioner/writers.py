@@ -26,6 +26,10 @@ _WORD: Final = re.compile(r"[A-Za-zÀ-ÿ']+")
 _ALWAYS_ALLOWED: Final = {"I", "BBQ", "Day", "Family", "The"}
 
 
+class WriterError(Exception):
+    """A writer couldn't produce a caption - network, auth, timeout, empty reply."""
+
+
 class Writer(Protocol):
     name: str
 

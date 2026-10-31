@@ -10,7 +10,7 @@ from typing import Any, Final
 from .config import Config, load_config
 from .facts import PageFacts, build_facts
 from .photo import Photo, load_photo
-from .writers import TemplateWriter, Writer, validate
+from .writers import TemplateWriter, Writer, WriterError, validate
 
 type StrPath = str | PathLike[str]
 
@@ -91,8 +91,11 @@ def caption_page(
 
     facts = build_facts(photos, context, home_country=home_country, config=config)
     template = TemplateWriter().write(facts)
-    caption = writer.write(facts)
-    rejected = validate(caption, facts) if writer.name != "template" else []
+    try:
+        caption = writer.write(facts)
+        rejected = validate(caption, facts) if writer.name != "template" else []
+    except WriterError as e:
+        caption, rejected = template, [f"writer failed: {e}"]
     if rejected:
         caption = template
 
