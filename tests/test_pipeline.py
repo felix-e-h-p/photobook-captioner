@@ -5,10 +5,7 @@ import pytest
 from captioner import caption_page, generate_caption
 from captioner.facts import PageFacts
 
-from .conftest import MakePhoto
-
-KNUTSFORD = {"lat": 53.306, "lon": -2.358}
-YUZAWA = {"lat": 39.034, "lon": 140.546}
+from .conftest import KNUTSFORD, YUZAWA, MakePhoto
 
 
 def test_end_to_end_one_off_occasion(make_photo: MakePhoto) -> None:

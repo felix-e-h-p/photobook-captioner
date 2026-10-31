@@ -3,13 +3,18 @@
 from collections.abc import Callable, Mapping
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Final
 
 import pytest
 from PIL import Image
 
+from captioner.facts import PageFacts
 from captioner.photo import Label, Photo
 
 type MakePhoto = Callable[..., Path]
+
+KNUTSFORD: Final = {"lat": 53.306, "lon": -2.358}
+YUZAWA: Final = {"lat": 39.034, "lon": 140.546}
 
 
 def _dms(value: float) -> tuple[float, float, float]:
@@ -67,3 +72,27 @@ def photo(labels: Mapping[str, float], taken_at: datetime | None = None) -> Phot
         taken_at=taken_at,
         labels=tuple(Label(name=n, confidence=c) for n, c in labels.items()),
     )
+
+
+def page_facts(**overrides: Any) -> PageFacts:
+    """Facts for a skiing page in Yuzawa, with any field overridden."""
+    base: dict[str, Any] = {
+        "n_photos": 1,
+        "occasion": "Skiing",
+        "phrase": "Skiing holiday",
+        "occasion_source": "page",
+        "date_text": "February 2020",
+        "date_style": "month",
+        "place": "Yuzawa, Japan",
+        "place_detail": {"town": "Yuzawa", "region": "Akita", "country": "Japan"},
+        "use_place": True,
+        "season": "winter",
+        "setting": "outdoor",
+        "kids": False,
+        "family": False,
+        "evidence": ["Skiing"],
+        "occasion_score": 3.0,
+        "occasion_margin": 3.0,
+        "runner_up": None,
+    }
+    return PageFacts(**(base | overrides))
