@@ -51,6 +51,8 @@ Session context is main driver of accuracy. Without it, approximately 40% of pag
 
 Both the template and LLM writers are equally accurate on occasion, since both use same facts. LLM gives about 4 times the variety (15% distinct captions against 4%) at a small cost in faithfulness (judge 4.77 against 4.80 out of 5). Validator rejects about 7.5% of LLM captions, which fall back to the template. Adding scene words to the validator raised judge faithfulness of LLM captions from 4.64 to 4.75 in an earlier run, at some cost in variety. LLM variety moves a little between runs since sampling isn't deterministic, template is.
 
+Manual review of 32 LLM captions, from a run pre scene/word fix, gave 4.0 for faithfulness and 3.6 for naturalness out of 5, approximately 69% and 47% of pages at 4 or above. Lowest scores came from invented scene details ("in the snow"), wrong labels and borrowed occasions.
+
 Repetition here is the main weakness. Laid out as a book, 30 of 34 ski pages get the same template caption. LLM writer definitely helps, yet section specific captions would help more.
 
 Full results, sample sizes and failure cases in `notebooks/03_results.ipynb` and the [write-up](docs/writeup.md). Example captions for every folder, both writers, in `outputs/examples/`.
