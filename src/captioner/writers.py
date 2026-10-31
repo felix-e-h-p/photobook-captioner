@@ -36,6 +36,51 @@ _PEOPLE_WORDS: Final = {
     "baby",
 }
 _KIDS_WORDS: Final = {"kids", "kid", "children", "child"}
+_SCENE_WORDS: Final = {
+    "spring",
+    "summer",
+    "autumn",
+    "winter",
+    "dark",
+    "night",
+    "evening",
+    "morning",
+    "sunset",
+    "sunrise",
+    "sunny",
+    "sunshine",
+    "snow",
+    "snowy",
+    "rain",
+    "rainy",
+    "storm",
+    "misty",
+    "foggy",
+    "kitchen",
+    "attic",
+    "bedroom",
+    "lounge",
+    "sofa",
+    "indoors",
+    "inside",
+    "garden",
+    "outdoors",
+    "outside",
+    "park",
+    "woods",
+    "forest",
+    "field",
+    "countryside",
+    "mountains",
+    "lake",
+    "river",
+    "sea",
+    "beach",
+}
+_SETTING_WORDS: Final = {
+    "indoor": {"indoors", "inside"},
+    "outdoor": {"outdoors", "outside", "garden"},
+}
 
 
 class WriterError(Exception):
@@ -88,6 +133,7 @@ def _allowed_words(f: PageFacts) -> set[str]:
         f.season,
         detail.get("region"),
         detail.get("country"),
+        *f.evidence,
     ]
     return {w.lower() for s in sources if s for w in _WORD.findall(s)}
 
@@ -131,6 +177,9 @@ def validate(caption: str, facts: PageFacts) -> list[str]:
         problems.append("mentions family, but the labels don't show it")
 
     allowed = _allowed_words(facts) | MONTH_WORDS
+    setting_words = _SETTING_WORDS.get(facts.setting, set())
+    for word in sorted(set(words) & _SCENE_WORDS - allowed - setting_words):
+        problems.append(f"'{word}' describes the scene, which the facts don't")
     for i, word in enumerate(_WORD.findall(c)):
         if i == 0 or not word[0].isupper() or word in _ALWAYS_ALLOWED:
             continue

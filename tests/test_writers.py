@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from captioner.writers import TemplateWriter, validate
@@ -79,3 +81,36 @@ def test_validate_allows_sept() -> None:
 def test_validate_allows_kids_and_family_when_labels_show_them() -> None:
     f = page_facts(kids=True, family=True)
     assert validate("Family ski trip with the kids, Feb 2020", f) == []
+
+
+@pytest.mark.parametrize(
+    ("caption", "overrides"),
+    [
+        ("7th February 2019 – Birthday party in the dark", {}),
+        ("7th February 2019 – Birthday party in the snow", {}),
+        ("13th September 2018 – Baking in the autumn kitchen", {"season": "autumn"}),
+        ("Skiing in the woods, February 2020", {}),
+        ("Skiing holiday in summer, February 2020", {}),
+    ],
+)
+def test_validate_rejects_scene_words_the_facts_dont_back(
+    caption: str, overrides: dict[str, Any]
+) -> None:
+    assert any("describes the scene" in p for p in validate(caption, page_facts(**overrides)))
+
+
+@pytest.mark.parametrize(
+    ("caption", "overrides"),
+    [
+        ("Winter skiing in Yuzawa, February 2020", {}),
+        ("Skiing in the snow, February 2020", {"evidence": ["Skiing", "Snow"]}),
+        ("Baking treats indoors, September 2018", {"setting": "indoor"}),
+        ("BBQ in the garden, July 2019", {"setting": "outdoor"}),
+        ("Family day at the beach, July 2019", {"phrase": "Family beach day"}),
+    ],
+)
+def test_validate_allows_scene_words_the_facts_back(
+    caption: str, overrides: dict[str, Any]
+) -> None:
+    facts = page_facts(**({"date_text": None} | overrides))
+    assert not [p for p in validate(caption, facts) if "describes the scene" in p]
