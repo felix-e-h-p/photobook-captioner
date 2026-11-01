@@ -49,9 +49,9 @@ Pages sampled per folder after near-duplicate removal (dHash), as random or cons
 
 ## Results
 
-Session context is main driver of accuracy. Without it about 40% of pages abstain. With it occasion accuracy is about 0.98 on both random and consecutive pages, with wrong occasions under 1%. Years in captions grounded in EXIF on every page.
+Session context is main driver of accuracy. Without it about 40% of pages abstain. With it occasion accuracy is about 0.98 on both random and consecutive pages, with wrong occasions under 1%. Years in captions grounded in EXIF on every page. Results hold across a wide range of settings.
 
-Template and LLM writers are equally accurate on occasion, since both use same facts. LLM gives about 4 times the variety (15% distinct captions against 4%) at a small cost in faithfulness (judge 4.77 against 4.80 out of 5). Validator rejects about 7.5% of LLM captions, which fall back to the template. Adding scene words to the validator raised judge faithfulness of LLM captions from 4.64 to 4.75 in an earlier run, at some cost in variety. LLM variety moves a little between runs since its sampling isn't deterministic - template's is.
+Template and LLM writers are equally accurate on occasion, since both use same facts. LLM gives about 4 times the variety (15% distinct captions against 4%) at a small but measurable cost in faithfulness (judge 4.77 against 4.80 out of 5, difference 0.01 to 0.05 at 95%). Validator rejects about 7.5% of LLM captions, which fall back to the template. Adding scene words to the validator raised judge faithfulness of LLM captions from 4.64 to 4.75 in an earlier run, at some cost in variety. LLM variety moves a little between runs since its sampling isn't deterministic - template's is.
 
 Hand review of 32 LLM captions, from a run before the scene-word fix, gave 4.0 for faithfulness and 3.6 for naturalness out of 5, with 69% and 47% of pages at 4 or above. Lowest scores came from invented scene details ("in the snow"), wrong labels and borrowed occasions.
 
