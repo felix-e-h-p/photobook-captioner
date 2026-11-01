@@ -52,6 +52,17 @@ Packaging and tooling: The package is strictly typed with 140 tests. CI runs lin
 
 ## 4. Evaluation criteria
 
+No reference captions exist, hence evaluation relies on checks that don't require them:
+
+- Occasion - folder names used as weak labels, with each page scored right, wrong or abstained.
+- Grounding - years in each caption checked against EXIF, independently of the validator.
+- Variety - share of distinct captions, since a book repeating one caption reads badly.
+- LLM judge - a larger local model (Llama 3.1 8B) scores faithfulness, specificity and naturalness from 1 to 5, given the facts and detected labels.
+- CLIP - image-text similarity of caption against photos.
+- Manual review - 32 pages rated by hand for faithfulness and naturalness.
+
+Each run samples 90 pages per folder (30 each of 1, 2 and 3 photos), 360 in total. The final runs share both code and sampled pages, hence are directly comparable. Full analysis situated in `notebooks/03_results.ipynb`.
+
 ### Main results
 
 | Run | Accuracy | Wrong | Abstained | Distinct captions | LLM rejected | Judge faithful |
@@ -64,3 +75,14 @@ Packaging and tooling: The package is strictly typed with 140 tests. CI runs lin
 | LLM, with context, consecutive pages | 0.98 | 0.4% | 1.5% | 12.5% | 7.5% | - |
 
 360 pages per run (270 with an expected occasion). Judge scored on context runs only. Manual review of 32 LLM captions gave 4.0 for faithfulness and 3.6 for naturalness, out of 5.
+
+### Failure cases
+
+The lowest manual scores fall into four kinds, each with a different fix:
+
+- Invented scene - a sunny garden party captioned "in the snow". Fixed by the scene word list.
+- Borrowed occasion - a child with ketchup on the sofa captioned "Baking", borrowed from baking photos taken the same afternoon.
+- Wrong label - adult skiers labelled as kids for example, so "with kids" passes the validator.
+- Mixed dates - photos from one party carry different EXIF years, hence "2018–2019".
+
+## 5. Production specifics
