@@ -33,7 +33,7 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --locked
-      - run: uv run pytest
+      - run: uv run pytest --cov=captioner --cov-report=term-missing
 
   docker:
     runs-on: ubuntu-latest

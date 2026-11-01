@@ -12,7 +12,7 @@ install:
 	uv run pre-commit install
 
 test:
-	uv run pytest
+	uv run pytest --cov=captioner --cov-report=term-missing
 
 lint:
 	uv run ruff check .
