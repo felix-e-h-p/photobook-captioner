@@ -33,3 +33,34 @@ Options are directly compared and discussed in `notebooks/02_approaches.ipynb`:
 The chosen design is effectively facts first and then wording. Every claim in a caption traces back to EXIF or a label, runs offline, and the wording step is swappable. Template method is the default and a local LLM is the option for variety. Both pass the same validation criteria. A vision model can be implemented later as one more source of facts, behind the same validator, as opposed to acting as the writer.
 
 The main guiding principle is that a printed caption can't be corrected. An invented detail is worse than a plain caption, hence the system abstains rather than guesses.
+
+## 3. Design and implementation specifics
+
+```
+photos -> EXIF + labels -> page facts -> writer -> validator -> caption
+```
+
+Facts: Capture time and GPS come directly from EXIF. GPS is reverse geocoded offline to a location/town, with the country added when outside the user's home country. Labels are scored against occasion rules situated in `src/captioner/occasions.toml`, which hold label specific evidence weights, main labels that must be present, blocking labels that rule an occasion out, and expected setting alongside season.
+
+Session context: A weak page may borrow an occasion from other photos taken within specified 6 hours and 25 km, yet only if session evidence is relatively clear, the page setting is compatible and nothing on the page blocks it. Strong page evidence will always override the session.
+
+Writers: The template has two shapes, trips ("Skiing holiday in Yuzawa, Japan, February 2020") and single day occasions ("7th February 2019 – Birthday party"). The LLM writer (Llama 3.2 3B via Ollama) only ever sees a few words of text (occasion, place, season, setting and a few flags) and never the actual photos or dates. The date is added back afterwards. Pages with no occasion are set to skip the model entirely.
+
+Validation: Every LLM caption is subsequently checked against the facts and hence rejected if it introduces years, months, days, proper nouns, people, or scene details that the facts do not support. Rejected captions will fall back to the template.
+
+Packaging and tooling: The package is strictly typed with 140 tests. CI runs lint, type checks and tests, then builds the Docker image and checks API captions a photo. Captioner is available as a Python function (`generate_caption`), a CLI, an HTTP API and a versioned MLflow model. Evaluation runs are logged to MLflow with config, commit and outputs. Aim is to ensure full traceability.
+
+## 4. Evaluation criteria
+
+### Main results
+
+| Run | Accuracy | Wrong | Abstained | Distinct captions | LLM rejected | Judge faithful |
+|---|---|---|---|---|---|---|
+| Template, page only | 0.59 | 2.2% | 39.3% | 5.6% | - | - |
+| Template, with context | 0.99 | 0.4% | 1.1% | 3.9% | - | 4.80 |
+| Template, with context, consecutive pages | 0.98 | 0.4% | 1.5% | 3.3% | - | - |
+| LLM, page only | 0.59 | 2.2% | 39.3% | 14.4% | 3.9% | - |
+| LLM, with context | 0.99 | 0.4% | 1.1% | 15.3% | 7.5% | 4.77 |
+| LLM, with context, consecutive pages | 0.98 | 0.4% | 1.5% | 12.5% | 7.5% | - |
+
+360 pages per run (270 with an expected occasion). Judge scored on context runs only. Manual review of 32 LLM captions gave 4.0 for faithfulness and 3.6 for naturalness, out of 5.
