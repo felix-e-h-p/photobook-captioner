@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install test lint format check evaluate evaluate-llm sweep review score model mlflow serve docker docker-run clean outputs
+.PHONY: help install test lint format check evaluate evaluate-llm sweep review score model mlflow serve docker docker-run clean outputs figures
 
 RUN ?=
 IMAGE := photobook-captioner
@@ -62,3 +62,6 @@ clean:
 outputs:
 	uv run python scripts/examples.py
 	uv run python scripts/examples.py --llm
+
+figures:
+	uv run python scripts/figures.py
