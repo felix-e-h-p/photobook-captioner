@@ -40,10 +40,10 @@ No reference captions exist, hence evaluation relies on checks that don't need t
 
 - Occasion - folder names as weak labels. Each page scored right, wrong or abstained.
 - Grounding - years in caption checked against EXIF, independently of the validator. Town checked against GPS.
-- Variety - share of distinct captions per folder, since a book repeating one caption reads badly.
+- Variety - share of distinct captions, since a book repeating one caption reads badly.
 - LLM judge - larger local model (Llama 3.1 8B) scores faithfulness, specificity and naturalness from 1 to 5, given facts and detected labels.
 - CLIP - image-text similarity of caption against photos (ViT-B/32), and gain over the template caption.
-- Human review - stratified sample of 32 pages rated by hand for faithfulness and naturalness.
+- Manual review - stratified sample of 32 pages rated by hand for faithfulness and naturalness.
 
 Pages sampled per folder after near-duplicate removal (dHash), as random or consecutive photos. All runs logged to MLflow with config, commit and per-page outputs.
 
@@ -53,7 +53,7 @@ Session context is main driver of accuracy. Without it about 40% of pages abstai
 
 Template and LLM writers are equally accurate on occasion, since both use same facts. LLM gives about 4 times the variety (15% distinct captions against 4%) at a small but measurable cost in faithfulness (judge 4.77 against 4.80 out of 5, difference 0.01 to 0.05 at 95%). Validator rejects about 7.5% of LLM captions, which fall back to the template. Adding scene words to the validator raised judge faithfulness of LLM captions from 4.64 to 4.75 in an earlier run, at some cost in variety. LLM variety moves a little between runs since its sampling isn't deterministic - template's is.
 
-Hand review of 32 LLM captions, from a run before the scene-word fix, gave 4.0 for faithfulness and 3.6 for naturalness out of 5, with 69% and 47% of pages at 4 or above. Lowest scores came from invented scene details ("in the snow"), wrong labels and borrowed occasions.
+Manual review of 32 LLM captions, from a run before the scene-word fix, gave 4.0 for faithfulness and 3.6 for naturalness out of 5, with 69% and 47% of pages at 4 or above. Lowest scores came from invented scene details ("in the snow"), wrong labels and borrowed occasions.
 
 Repetition is the main weakness. Laid out as a book, 30 of 34 ski pages get the same template caption. LLM writer helps, section-level captions would help more.
 
@@ -61,7 +61,7 @@ Full results, sample sizes and failure cases in `notebooks/03_results.ipynb` and
 
 ## Quick start
 
-Requires [uv](https://docs.astral.sh/uv/). Ollama only for LLM writer and judge (`ollama pull llama3.2:3b`, `ollama pull llama3.1:8b`).
+Requires [uv](https://docs.astral.sh/uv/). Ollama only for LLM writer and judge (`ollama pull llama3.2:3b`, `ollama pull llama3.1:8b`). CLIP only for evaluation (`uv sync --group clip`).
 
 Sample photo folders provided with the task go in `data/`, each photo with its label file alongside, e.g. `data/skiing-holiday/Image_1.jpg` and `data/skiing-holiday/Image_1.jpg.json`.
 
@@ -95,6 +95,7 @@ make mlflow         compare runs in MLflow UI
 make serve          HTTP API, docs at /docs
 make docker         build API image
 make model          log and register captioner as an MLflow model
+make figures        figures for the write-up, from the final runs
 ```
 
 ## Serving
@@ -116,10 +117,10 @@ src/captioner/
     cli.py, api.py, serving.py     command line, HTTP API, MLflow model
     evaluation/                    sampling, metrics, LLM judge, CLIP
 notebooks/   exploration, approaches compared, results
-scripts/     evaluation, examples, human review, model logging
+scripts/     evaluation, examples, figures, manual review, model logging
 configs/     evaluation settings (Hydra)
 outputs/     example captions and review ratings
-docs/        write-up
+docs/        write-up and figures
 tests/
 ```
 
